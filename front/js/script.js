@@ -1,6 +1,8 @@
+
 const createProduits = () => fetch(`http://localhost:3000/api/products`)
     .then(res => res.json())
     .then(function (data) {
+
         const structure = data;
 
         function newArticle() {
@@ -11,7 +13,7 @@ const createProduits = () => fetch(`http://localhost:3000/api/products`)
                 let newItems = document.createElement('a');
 
                 items.appendChild(newItems);
-                newItems.setAttribute('href', './product.html?id=' + structure[0]._id);
+                newItems.setAttribute('href', './product.html?id=' + structure[i]._id);
 
                 const article = document.createElement('article');
 
@@ -34,9 +36,11 @@ const createProduits = () => fetch(`http://localhost:3000/api/products`)
 
             }
         }
+
         newArticle();
 
     })
+    
     .catch(err => console.log(err))
 
 createProduits();
