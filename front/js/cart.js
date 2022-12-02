@@ -19,19 +19,21 @@ class cartProduct {
     async checkProduct(element) {
 
         let allProducts = await Products();
-
+     let elementChecked = [];
         allProducts.forEach(elt => {
 
             if (element._id == elt['_id']) {
 
-                this.createItem(element, elt);
+                elementChecked = elt;
             }
 
         });
-        ;
+        return elementChecked;
     }
 
-    async createItem(element, elt) {
+    async createItem(element) {
+
+        let elt = await this.checkProduct(element);
 
         const cart__item = document.getElementById('cart__items');
         let article = document.createElement('article');
@@ -84,18 +86,17 @@ class cartProduct {
         del.innerHTML = `<p class="deletItem"> Supprimer</p>`;
 
         article.appendChild(del);
-
-    }
-
+               
+    }    
+    
 }
+
 recupStorage = JSON.parse(localStorage.getItem('product'));
 
 recupStorage.forEach(element => {
 
     let currentProduct = new cartProduct(element._id, element.color, element.quantity);
 
-    currentProduct.checkProduct(element);
+    currentProduct.createItem(element);
 
 });
-
-
