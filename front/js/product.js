@@ -61,7 +61,6 @@ const produit = () => fetch(`http://localhost:3000/api/products/${id}`)
                     _id: infoProduct._id,
                     color: colorSelected,
                     quantity: +quantitySelected,
-                    price: infoProduct.price, 
                 };
 
 
@@ -111,11 +110,6 @@ const produit = () => fetch(`http://localhost:3000/api/products/${id}`)
 
             }
         });
-
-        /* if (localStorage) {
-             localStorage.clear();
-             console.log(localStorage);
-         }*/
 
         addColors();
 
