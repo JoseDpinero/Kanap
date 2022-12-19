@@ -4,15 +4,13 @@ const id = url.searchParams.get('id');
 let upStorage = [];
 
 // Récupère l'article avec l'id de l'url. 
-const getProducts = async () => fetch(`http://localhost:3000/api/products/${id}`)
+const getProducts = () => fetch(`http://localhost:3000/api/products/${id}`)
    .then(res => res.json())
-   .then(function (data) {
-      return data
-   })
+   .then(function (data) { return data })
    .catch(err => console.log(err));
 
 // récupère les couleurs de l'API du produit et ajoute ces valeurs
-async function addColors(data) {
+function addColors(data) {
    const colors = document.getElementById('colors');
 
    for (let i in data.colors) {
@@ -31,8 +29,6 @@ function sortSelectedProducts(array) {
       if (nameA < nameB) {
          return -1;
       }
-
-
       if (nameA > nameB) {
          return 1;
       }

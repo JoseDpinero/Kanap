@@ -3,9 +3,8 @@ let form = document.querySelector('form');
 // recupération de tous les produits de l'API.
 let getProducts = async () => fetch('http://localhost:3000/api/products')
     .then(res => res.json())
-    .then(function (data) {
-        return data
-    });
+    .then(function (data) { return data })
+    .catch(err => console.log(err))
 
 // recupération du local storage.
 function getStorage() {
