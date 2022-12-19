@@ -12,36 +12,62 @@ function getStorage() {
     return JSON.parse(localStorage.getItem('product'))
 }
 
+// récupère les données et lances les fonctions.
+async function awaitDataAndLoading() {
+    const items = await getProducts();
+    const cartProducts = await cleanUnwantedItem(items);
+
+    createArticles(cartProducts);
+    productsPrice(cartProducts);
+
+    const deleteBtn = document.querySelectorAll('.deleteItem');
+    const inputNumber = document.querySelectorAll('.itemQuantity');
+    const article = document.querySelectorAll('.cart__item');
+    const section = document.getElementById('cart__items');
+
+    deleteItem(deleteBtn, article, section, cartProducts);
+    modifyQuantity(inputNumber, cartProducts);
+}
+
 // Si le Produit est dans l'API créé l'article sinon supprime l'entrée.
-async function getLocalStorage() {
-    let currentStorage = await getStorage();
-    let i = 0;
-
-    if (currentStorage != null && currentStorage.length != 0) {
-        currentStorage.forEach(async element => {
-            let result = await checkProduct(element, currentStorage);
-
-            if (result) {
-                createArticleItem(element);
-                productsPrice(currentStorage);
-            } else {
-                currentStorage.splice(i, 1);
-                localStorage.setItem('product', JSON.stringify(currentStorage));
+async function cleanUnwantedItem(items) {
+    let itemsInLocalStorage = await getStorage();
+    let wantedProducts = [];
+    if (itemsInLocalStorage) {
+        for (let i = 0; i < itemsInLocalStorage.length; i++) {
+            let wantedItem = await checkProduct(itemsInLocalStorage[i]);
+            if (wantedItem) {
+                const found = items.find(element => element._id == itemsInLocalStorage[i]._id)
+                wantedProducts.push({
+                    '_id': found._id,
+                    'name': found.name,
+                    'color': itemsInLocalStorage[i].color,
+                    'price': found.price,
+                    'imageUrl': found.imageUrl,
+                    'quantity': itemsInLocalStorage[i].quantity,
+                    'altTxt': found.altTxt
+                });
             }
-            i++
-        });
+        }
+        return wantedProducts;
+    }
+
+}
+
+// fait une boucle pour créer chaque article.
+function createArticles(products) {
+    for (let i = 0; i < products.length; i++) {
+        createArticleItem(products[i]);
     }
 }
+
 
 // Fait le total des prix des produits sélectionnés et l'injecte dans le #totalPrice et #totalQuantity.
 async function productsPrice(products) {
     let totalPrice = 0;
     let totalQuantity = 0;
-
     for (let i = 0; i < products.length; i++) {
-        let elt = await checkProduct(products[i]);
-
-        totalPrice += products[i].quantity * elt.price;
+        totalPrice += products[i].quantity * products[i].price;
         totalQuantity += products[i].quantity;
     }
     document.getElementById('totalPrice').innerText = totalPrice;
@@ -49,10 +75,9 @@ async function productsPrice(products) {
 }
 
 // Vérifie que le produit est dans l'API 
-async function checkProduct(element) {
+async function checkProduct(item) {
     let allProducts = await getProducts();
-    let currentItem = element;
-    let indexArticle = allProducts.findIndex((element) => element._id == currentItem._id);
+    let indexArticle = allProducts.findIndex((element) => element._id == item._id);
 
     if (indexArticle != -1) {
         return allProducts[indexArticle];
@@ -62,19 +87,17 @@ async function checkProduct(element) {
 }
 
 // Créé un article 
-async function createArticleItem(element) {
-    let elt = await checkProduct(element);
-
+function createArticleItem(element) {
     const cart__item = document.getElementById('cart__items');
     cart__item.innerHTML += `<article class="cart__item" data-id="${element._id}" data-color="${element.color}">
 <div class="cart__item__img">
-<img src="${elt.imageUrl}" alt="${elt.altTxt}">
+<img src="${element.imageUrl}" alt="${element.altTxt}">
 </div>
 <div class="cart__item__content">
   <div class="cart__item__content__description">
-    <h2>${elt.name}</h2>
+    <h2>${element.name}</h2>
     <p>${element.color}</p>
-    <p>${elt.price},00 €</p>
+    <p>${element.price},00 €</p>
   </div>
   <div class="cart__item__content__settings">
     <div class="cart__item__content__settings__quantity">
@@ -89,37 +112,34 @@ async function createArticleItem(element) {
 }
 
 // Supprime le produit.
-function deleteItem(deleteBtn, article, section) {
+function deleteItem(deleteBtn, article, section, items) {
     for (let i = 0; i < deleteBtn.length; i++) {
 
         deleteBtn[i].addEventListener('click', function (event) {
-            let articlesSelected = getStorage();
             const targetElement = event.target.closest('.cart__item').dataset;
-            let indexArticle = articlesSelected.findIndex((element) => element._id == targetElement.id && element.color == targetElement.color);
+            let indexArticle = items.findIndex((element) => element._id == targetElement.id && element.color == targetElement.color);
 
             section.removeChild(article[i]);
-            articlesSelected.splice(indexArticle, 1);
+            items.splice(indexArticle, 1);
 
-            localStorage.setItem('product', JSON.stringify(articlesSelected));
-            productsPrice(articlesSelected);
+            localStorage.setItem('product', JSON.stringify(items));
+            productsPrice(items);
         })
     }
 }
 
 
 // Modifie la quantité d'un produit.
-function modifyQuantity(number) {
+function modifyQuantity(number, items) {
     for (let i = 0; i < number.length; i++) {
         number[i].addEventListener('change', function (event) {
-            let articlesSelected = getStorage();
-
             const targetElement = event.target.closest('.cart__item').dataset;
-            let indexArticle = articlesSelected.findIndex((element) => element._id == targetElement.id && element.color == targetElement.color);
+            let indexArticle = items.findIndex((element) => element._id == targetElement.id && element.color == targetElement.color);
 
-            articlesSelected[indexArticle].quantity = +event.target.value;
+            items[indexArticle].quantity = +event.target.value;
 
-            localStorage.setItem('product', JSON.stringify(articlesSelected));
-            productsPrice(articlesSelected);
+            localStorage.setItem('product', JSON.stringify(items));
+            productsPrice(items);
         })
     }
 }
@@ -214,18 +234,6 @@ function send(contact, products) {
 }
 // Fin de la fonction send 
 
-// récupère les noeuds pour modifier et supprimer les produits.
-async function modifyOrder() {
-    const deleteBtn = document.querySelectorAll('.deleteItem');
-    const inputNumber = document.querySelectorAll('.itemQuantity');
-    const article = document.querySelectorAll('.cart__item');
-    const section = document.getElementById('cart__items');
-
-    deleteItem(deleteBtn, article, section);
-    modifyQuantity(inputNumber);
-
-}
-
 // Ecoute des modifications de firstName
 form.firstName.addEventListener('change', function () {
     namesValidation(this);
@@ -253,7 +261,7 @@ form.email.addEventListener('change', function () {
 
 // créer le contact et la liste des produits et l'envoie à la fonction send().
 function order() {
-    let contact = {
+    let formContact = {
         firstName: form.firstName.value,
         lastName: form.lastName.value,
         address: form.address.value,
@@ -261,11 +269,11 @@ function order() {
         email: form.email.value
     };
 
-    let products = []
+    let productSelected = []
 
-    getStorage().forEach(element => { products.push(element._id) });
+    getStorage().forEach(element => { productSelected.push(element._id) });
 
-    send(contact, products);
+    send(formContact, productSelected);
 }
 
 // Ecoute le bouton de #Order si les conditions sont remplies appelle la fonction order().
@@ -278,6 +286,4 @@ form.addEventListener('submit', async function (event) {
     }
 })
 
-getProducts()
-    .then(getLocalStorage())
-    .then(setTimeout(modifyOrder, 500));
+awaitDataAndLoading();
