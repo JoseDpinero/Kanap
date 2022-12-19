@@ -16,17 +16,18 @@ function getStorage() {
 async function awaitDataAndLoading() {
     const items = await getProducts();
     const cartProducts = await cleanUnwantedItem(items);
+    if (cartProducts) {
+        createArticles(cartProducts);
+        totalPriceAndQuantity(cartProducts);
 
-    createArticles(cartProducts);
-    productsPrice(cartProducts);
+        const deleteBtn = document.querySelectorAll('.deleteItem');
+        const inputNumber = document.querySelectorAll('.itemQuantity');
+        const article = document.querySelectorAll('.cart__item');
+        const section = document.getElementById('cart__items');
 
-    const deleteBtn = document.querySelectorAll('.deleteItem');
-    const inputNumber = document.querySelectorAll('.itemQuantity');
-    const article = document.querySelectorAll('.cart__item');
-    const section = document.getElementById('cart__items');
-
-    deleteItem(deleteBtn, article, section, cartProducts);
-    modifyQuantity(inputNumber, cartProducts);
+        deleteItem(deleteBtn, article, section, cartProducts);
+        modifyQuantity(inputNumber, cartProducts);
+    }
 }
 
 // Si le Produit est dans l'API créé l'article sinon supprime l'entrée.
@@ -49,9 +50,23 @@ async function cleanUnwantedItem(items) {
                 });
             }
         }
+        updateLocalStorage(wantedProducts);
         return wantedProducts;
     }
+}
 
+// fonction de mise-à-jour du localstorage.
+function updateLocalStorage(items) {
+    let newStorage = [];
+    for (let i = 0; i < items.length; i++) {
+        newStorage.push({
+            '_id': items[i]._id,
+            'color': items[i].color,
+            'quantity': items[i].quantity,
+
+        });
+    }
+    localStorage.setItem('product', JSON.stringify(newStorage));
 }
 
 // fait une boucle pour créer chaque article.
@@ -63,7 +78,7 @@ function createArticles(products) {
 
 
 // Fait le total des prix des produits sélectionnés et l'injecte dans le #totalPrice et #totalQuantity.
-async function productsPrice(products) {
+async function totalPriceAndQuantity(products) {
     let totalPrice = 0;
     let totalQuantity = 0;
     for (let i = 0; i < products.length; i++) {
@@ -114,16 +129,14 @@ function createArticleItem(element) {
 // Supprime le produit.
 function deleteItem(deleteBtn, article, section, items) {
     for (let i = 0; i < deleteBtn.length; i++) {
-
         deleteBtn[i].addEventListener('click', function (event) {
             const targetElement = event.target.closest('.cart__item').dataset;
             let indexArticle = items.findIndex((element) => element._id == targetElement.id && element.color == targetElement.color);
 
             section.removeChild(article[i]);
             items.splice(indexArticle, 1);
-
-            localStorage.setItem('product', JSON.stringify(items));
-            productsPrice(items);
+            updateLocalStorage(items);
+            totalPriceAndQuantity(items);
         })
     }
 }
@@ -138,8 +151,8 @@ function modifyQuantity(number, items) {
 
             items[indexArticle].quantity = +event.target.value;
 
-            localStorage.setItem('product', JSON.stringify(items));
-            productsPrice(items);
+            updateLocalStorage(items);
+            totalPriceAndQuantity(items);
         })
     }
 }
